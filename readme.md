@@ -4185,3 +4185,680 @@
     ## **Conteúdo complementar - EstudosKubernetes**
     
     [https://github.com/Erick-Fernandes-dev/EstudosKubernetes](https://github.com/Erick-Fernandes-dev/EstudosKubernetes)
+
+
+### HPA
+
+### Instalando o metrics server
+
+MetricServer → Coletar as métricas em tempo real de quanto cada Pod, cada parte do Kubernetes está consumindo naquele momento
+
+Não vêm instaldo no kind por padrão
+
+Link para instalar o metrics-server
+
+[https://github.com/kubernetes-sigs/metrics-server](https://github.com/kubernetes-sigs/metrics-server)
+
+Baixe component: 👇🏻
+
+```go
+wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+```
+
+vá em issues: 👇🏻
+
+[https://github.com/kubernetes-sigs/metrics-server/issues/525](https://github.com/kubernetes-sigs/metrics-server/issues/525)
+
+![Untitled](Kubernetes%2076b569f94cdc4598a04fae48c3ab5045/Untitled.png)
+
+Manifesto do metrics server
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    k8s-app: metrics-server
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: system:aggregated-metrics-reader
+rules:
+- apiGroups:
+  - metrics.k8s.io
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: system:metrics-server
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes/metrics
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: metrics-server-auth-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+- kind: ServiceAccount
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: metrics-server:system:auth-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: system:metrics-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:metrics-server
+subjects:
+- kind: ServiceAccount
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: metrics-server
+  namespace: kube-system
+spec:
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    k8s-app: metrics-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: metrics-server
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        k8s-app: metrics-server
+    spec:
+      containers:
+      - args:
+        - --cert-dir=/tmp
+        - --secure-port=4443
+        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+        - --kubelet-use-node-status-port
+        - --metric-resolution=15s
+        - --kubelet-insecure-tls
+        image: registry.k8s.io/metrics-server/metrics-server:v0.6.4
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: https
+            scheme: HTTPS
+          periodSeconds: 10
+        name: metrics-server
+        ports:
+        - containerPort: 4443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: https
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-dir
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      serviceAccountName: metrics-server
+      volumes:
+      - emptyDir: {}
+        name: tmp-dir
+---
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: v1beta1.metrics.k8s.io
+spec:
+  group: metrics.k8s.io
+  groupPriorityMinimum: 100
+  insecureSkipTLSVerify: true
+  service:
+    name: metrics-server
+    namespace: kube-system
+  version: v1beta1
+  versionPriority: 100
+```
+
+Listar os apiservices
+
+```yaml
+kubectl get apiservices
+```
+
+### Entendendo utilização de Resources
+
+vCPU → 1000m  (milicores) 500m. 0.5 → metade da minha vCPU
+
+Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: wesleywillians/hello-go:v9.6
+        resources:
+          requests:
+            memory: "5Mi"
+            cpu: "0.1"
+          limits:
+            memory: "10Mi"
+            cpu: "0.2"
+        ports:
+        - containerPort: 8000
+```
+
+Service
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  selector:
+    app: myapp
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8000
+```
+
+Rodando o Fortio
+
+```yaml
+kubectl run --image=fortio/fortio fortio -- load -qps 800 -t 20s -c 50 "http://myapp-service/healthz"
+```
+
+Estressando mais ainda
+
+```yaml
+kubectl run --image=fortio/fortio fortio -- load -qps 900 -t 20s -c 80 "http://myapp-service/healthz"
+```
+
+```yaml
+watch -n1 kubectl top pod myapp-599756b6c7-vdh5w
+```
+
+### Finalmente o HPA
+
+O HPA (Horizontal Pod Autoscaler) no Kubernetes é um recurso que automatiza a escala do número de réplicas de um conjunto de pods (replica set, deployment, stateful set, etc.) com base na carga de trabalho ou métricas específicas. O objetivo é garantir que sua aplicação tenha a capacidade computacional necessária para lidar com as demandas variáveis.
+
+A principal finalidade do HPA é permitir que sua aplicação se ajuste dinamicamente ao tráfego, escalando para cima quando há um aumento na carga e para baixo quando a carga diminui. Aqui estão alguns pontos-chave sobre o HPA:
+
+1. **Autoscaling com Base em Métricas:**
+    - O HPA monitora métricas específicas, como uso de CPU ou métricas personalizadas, e ajusta o número de réplicas do conjunto de pods com base nessas métricas.
+2. **Configuração Flexível:**
+    - Você pode configurar o HPA para escalar com base em métricas de uso de CPU, uso de memória ou até mesmo métricas personalizadas definidas por você.
+3. **Suporte a Métricas Personalizadas:**
+    - Além das métricas padrão do sistema, o HPA suporta métricas personalizadas, permitindo que você ajuste a escala com base em aspectos específicos de sua aplicação.
+4. **Integração com Múltiplos Tipos de Workloads:**
+    - O HPA pode ser utilizado com diferentes tipos de workloads, incluindo deployments, stateful sets e replica sets.
+5. **Gradação de Escala:**
+    - O HPA permite que você defina regras para escalonamento gradual, evitando ajustes bruscos e proporcionando uma adaptação mais suave às mudanças na carga.
+6. **Prevenção contra Oscilação:**
+    - O HPA inclui mecanismos para evitar oscilações frequentes de escalonamento, o que ajuda a estabilizar a operação em situações de carga flutuante.
+7. **Integração com o Cluster Autoscaler:**
+    - Quando usado em conjunto com o Cluster Autoscaler, o HPA pode escalar não apenas o número de pods em um deployment, mas também escalar o número de nós no cluster, proporcionando uma escalabilidade ainda mais abrangente.
+
+Ao usar o HPA, você pode garantir que sua aplicação tenha recursos suficientes para lidar com variações na carga de trabalho, garantindo eficiência operacional e uma experiência mais consistente para os usuários finais.
+
+YAML HPA do deployment myapp
+
+```yaml
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myapp-hpa
+spec:
+  # Vai fazer o autoscaling no deployment myapp
+  scaleTargetRef:
+    apiVersion: apps/v1
+    name: myapp
+    kind: Deployment
+  # vai rodar 1 replica no minimo e 15 no maximo
+  minReplicas: 1
+  maxReplicas: 30
+  # porcentagem de uso de cpu para escalar
+  targetCPUUtilizationPercentage: 50
+```
+
+```bash
+watch -n1 kubectl get hpa
+```
+
+O comando `watch` é uma ferramenta de linha de comando que executa periodicamente um comando específico e exibe a saída em tempo real. No caso do comando que você forneceu:
+
+```bash
+watch -n1 kubectl get hpa
+
+```
+
+- `watch`: Inicia a execução do comando de forma repetida em intervalos regulares.
+- `n1`: Define o intervalo de atualização, indicando que o comando deve ser executado a cada 1 segundo.
+- `kubectl get hpa`: É o comando Kubernetes que exibe informações sobre os Autoscalers Horizontais (Horizontal Pod Autoscalers ou HPAs) no cluster.
+
+Portanto, esse comando específico está sendo utilizado para monitorar e exibir as informações sobre os Autoscalers Horizontais no seu cluster Kubernetes. A saída será atualizada a cada segundo, permitindo que você observe alterações dinâmicas nos valores do HPA, como a contagem atual de réplicas, métricas de uso de recursos, entre outras informações relacionadas ao dimensionamento automático. Esse tipo de monitoramento em tempo real pode ser útil para entender como o escalonamento automático está respondendo às mudanças na carga de trabalho do cluster.
+
+### Statefulset
+
+O Statefulset é uma funcionalidade no kubernetes que gerencia o deployment e o scaling de um conjunto de Pods, fornecendo garantias sobre a ordem de deployment e a singularidade desses Pods.
+
+É distinto entre os Deployments e Replicasets que são considerados stateless (sem estado), os `Statefulsets` são utilizados quando você precisa de mais garantias sobre o deployment e scaling. Eles garantem que os nomes e endereços dos Pods sejam consistentes e estáveis ao longo do tempo.
+
+Diferentemente de `Deployments`, que são usados para aplicativos sem estado, `StatefulSets` são ideais para aplicações que mantêm um estado, como bancos de dados e sistemas de armazenamento. Cada instância do pod em um `StatefulSet` tem um nome único e persistente, e elas são criadas e escaladas de maneira sequencial.
+
+### Quando usar StatefulSets?
+
+Os `StatefulSets` são úteis para aplicações que necessitam de um ou mais dos seguintes:
+
+- Identidade de rede estável e única.
+- Armazenamento persistente estável.
+- Ordem de deployment e scaling garantida.
+- Ordem de rolling updates e rollbacks garantida.
+- Algumas aplicações que se encaixam nesses requisitos são bancos de
+dados, sistemas de filas e quaisquer aplicativos que necessitam de
+persistência de dados ou identidade de rede estável.
+
+---
+
+- **dentidade persistente:** Cada pod em um `StatefulSet` possui um nome persistente que é baseado em um padrão, geralmente no formato `<nome-do-statefulset>-<ordinal>`. Essa identidade persistente é mantida mesmo durante reinicializações ou reimplantações.
+- **Persistência de armazenamento:** `StatefulSets` suportam volumes persistentes, o que significa que os dados podem ser mantidos mesmo se um pod for movido para outro nó ou se for reiniciado.
+- **Ordem de inicialização garantida:** A inicialização dos pods em um `StatefulSet` é feita de forma sequencial, garantindo que cada pod anterior esteja em execução e pronto antes que o próximo seja iniciado. Isso é útil para aplicações que dependem da ordem durante a inicialização.
+- **Serviços de cabeçalho:** `StatefulSets` são normalmente associados a serviços de cabeçalho (headless services), que fornecem uma resolução DNS estável para cada pod, facilitando a descoberta de outros pods no conjunto.
+- **Atualizações controladas:** Atualizações em um `StatefulSet` podem ser controladas para garantir a estabilidade da aplicação. Isso é especialmente útil para bancos de dados, onde é necessário garantir a consistência dos dados durante atualizações.
+    
+    
+    ### E como ele funciona?
+    
+    Os `StatefulSets` funcionam criando uma série de Pods 
+    replicados. Cada réplica é uma instância da mesma aplicação que é criada
+     a partir do mesmo spec, mas pode ser diferenciada por seu índice e 
+    hostname.
+    
+    Ao contrário dos Deployments e Replicasets, onde as réplicas são 
+    intercambiáveis, cada Pod em um StatefulSet tem um índice persistente e 
+    um hostname que se vinculam a sua identidade.
+    
+    Por exemplo, se um StatefulSet tiver um nome giropops e um spec com 
+    três réplicas, ele criará três Pods: giropops-0, giropops-1, giropops-2.
+     A ordem dos índices é garantida. O Pod giropops-1 não será iniciado até
+     que o Pod giropops-0 esteja disponível e pronto.
+    
+    A mesma garantia de ordem é aplicada ao scaling e aos updates.
+    
+    ### O StatefulSet e os volumes persistentes
+    
+    Um aspecto chave dos `StatefulSets` é a integração com 
+    Volumes Persistentes. Quando um Pod é recriado, ele se reconecta ao 
+    mesmo Volume Persistente, garantindo a persistência dos dados entre as 
+    recriações dos Pods.
+    
+    Por padrão, o Kubernetes cria um PersistentVolume para cada Pod em um
+     StatefulSet, que é então vinculado a esse Pod para a vida útil do 
+    StatefulSet.
+    
+    Isso é útil para aplicações que precisam de um armazenamento persistente e estável, como bancos de dados.
+    
+    ### O StatefulSet e os volumes persistentes
+    
+    Um aspecto chave dos `StatefulSets` é a integração com 
+    Volumes Persistentes. Quando um Pod é recriado, ele se reconecta ao 
+    mesmo Volume Persistente, garantindo a persistência dos dados entre as 
+    recriações dos Pods.
+    
+    Por padrão, o Kubernetes cria um PersistentVolume para cada Pod em um
+     StatefulSet, que é então vinculado a esse Pod para a vida útil do 
+    StatefulSet.
+    
+    Isso é útil para aplicações que precisam de um armazenamento persistente e estável, como bancos de dados.
+    
+    ### O StatefulSet e o Headless Service
+    
+    Para entender a relação entre o StatefulSet e o Headless Service, é preciso primeiro entender o que é um Headless Service.
+    
+    No Kubernetes, um serviço é uma abstração que define um conjunto 
+    lógico de Pods e uma maneira de acessá-los. Normalmente, um serviço tem 
+    um IP e encaminha o tráfego para os Pods. No entanto, um Headless 
+    Service é um tipo especial de serviço que não tem um IP próprio. Em vez 
+    disso, ele retorna diretamente os IPs dos Pods que estão associados a 
+    ele.
+    
+    Agora, o que isso tem a ver com os `StatefulSets`?
+    
+    Os `StatefulSets` e os `Headless Services` geralmente trabalham juntos no gerenciamento de aplicações stateful. O `Headless Service` é responsável por permitir a comunicação de rede entre os Pods em um `StatefulSet`, enquanto o ` gerencia o deployment e o scaling desses Pods.
+    
+    Aqui está como eles funcionam juntos:
+    
+    Quando um `StatefulSet` é criado, ele geralmente é associado a um `Headless Service`. Ele é usado para controlar o domínio DNS dos `Pods` criados pelo `StatefulSet`. Cada `Pod` obtém um nome de host DNS que segue o formato: `<pod-name>.<service-name>.<namespace>.svc.cluster.local`. Isso permite que cada `Pod` seja alcançado individualmente.
+    
+    Por exemplo, se você tiver um `StatefulSet` chamado giropops com três réplicas e um `Headless Service` chamado `nginx`, os `Pods`
+     criados serão giropops-0, giropops-1, giropops-2 e eles terão os 
+    seguintes endereços de host DNS: 
+    
+    giropops-0.nginx.default.svc.cluster.local, 
+    giropops-1.nginx.default.svc.cluster.local, 
+    giropops-2.nginx.default.svc.cluster.local.
+    
+    Essa combinação de `StatefulSets` com `Headless Services` permite que aplicações `stateful`,
+     como bancos de dados, tenham uma identidade de rede estável e 
+    previsível, facilitando a comunicação entre diferentes instâncias da 
+    mesma aplicação.
+    
+    ### Criando um StatefulSet:
+    
+    ```yaml
+    apiVersion: apps/v1
+    kind: StatefulSet # Tipo do recurso que estamos criando, no caso, um StatefulSet
+    metadata:
+      name: nginx
+    spec:
+      serviceName: "nginx"
+      replicas: 3
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+          - name: nginx
+            image: nginx
+            ports:
+            - containerPort: 80
+              name: web
+            volumeMounts:
+            - name: www
+              mountPath: /usr/share/nginx/html
+      volumeClaimTemplates: # Como estamos utilizando StatefulSet, precisamos criar um template de volume para cada Pod, entã ao invés de criarmos um volume diretamente, criamos um template que será utilizado para criar um volume para cada Pod
+      - metadata:
+          name: www # Nome do volume, assim teremos o volume www-0, www-1 e www-2
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 1Gi
+    ```
+    
+    ```yaml
+    kubectl apply -f nginx-statefulset.yaml
+    
+    # Ver o statefulset
+    kubectl get statefulset
+    NAME    READY   AGE
+    nginx   3/3     2m38s
+    
+    # vizualizar mais informações
+    kubectl describe statefulset nginx
+    
+    Name:               nginx
+    Namespace:          default
+    CreationTimestamp:  Thu, 18 May 2023 23:44:45 +0200
+    Selector:           app=nginx
+    Labels:             <none>
+    Annotations:        <none>
+    Replicas:           3 desired | 3 total
+    Update Strategy:    RollingUpdate
+      Partition:        0
+    Pods Status:        3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+    Pod Template:
+      Labels:  app=nginx
+      Containers:
+       nginx:
+        Image:        nginx
+        Port:         80/TCP
+        Host Port:    0/TCP
+        Environment:  <none>
+        Mounts:
+          /usr/share/nginx/html from www (rw)
+      Volumes:  <none>
+    Volume Claims:
+      Name:          www
+      StorageClass:  
+      Labels:        <none>
+      Annotations:   <none>
+      Capacity:      1Gi
+      Access Modes:  [ReadWriteOnce]
+    Events:
+      Type    Reason            Age   From                    Message
+      ----    ------            ----  ----                    -------
+      Normal  SuccessfulCreate  112s  statefulset-controller  create Claim www-nginx-0 Pod nginx-0 in StatefulSet nginx success
+      Normal  SuccessfulCreate  112s  statefulset-controller  create Pod nginx-0 in StatefulSet nginx successful
+      Normal  SuccessfulCreate  102s  statefulset-controller  create Claim www-nginx-1 Pod nginx-1 in StatefulSet nginx success
+      Normal  SuccessfulCreate  102s  statefulset-controller  create Pod nginx-1 in StatefulSet nginx successful
+      Normal  SuccessfulCreate  96s   statefulset-controller  create Claim www-nginx-2 Pod nginx-2 in StatefulSet nginx success
+      Normal  SuccessfulCreate  96s   statefulset-controller  create Pod nginx-2 in StatefulSet nginx successful
+    ```
+    
+    ```yaml
+    kubectl get pods
+    NAME      READY   STATUS    RESTARTS   AGE
+    nginx-0   1/1     Running   0          24s
+    nginx-1   1/1     Running   0          14s
+    nginx-2   1/1     Running   0          8s
+    ```
+    
+    O nosso `StatefulSet` está criado, mas ainda temos que criar o `Headless Service` para que possamos acessar os `Pods` individualmente, e para isso, vamos criar o arquivo `nginx-headless-service.yaml` com o seguinte conteúdo:
+    
+    ```yaml
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: nginx
+      labels:
+        app: nginx
+    spec:
+      ports:
+      - port: 80
+        name: web
+      clusterIP: None # Como estamos criando um Headless Service, não queremos que ele tenha um IP, então definimos o clusterIP como None
+      selector:
+        app: nginx
+    ```
+    
+    ```yaml
+    kubectl apply -f nginx-headless-service.yaml
+    
+    kubectl get service
+    
+    kubectl describe service nginx
+    
+    ```
+    
+    Agora que já temos o `StatefulSet` e o `Headless Service` criados, podemos acessar cada `Pod` individualmente, para isso, vamos utilizar o comando:
+    
+    ```yaml
+    kubectl run -it --rm debug --image=busybox --restart=Never -- sh
+    ```
+    
+    Agora vamos utilizar o comando `nslookup` para verificar o endereço IP de cada `Pod`, para isso, vamos utilizar o comando:
+    
+    ```yaml
+    nslookup nginx-0.nginx
+    ```
+    
+    Agora vamos acessar o `Pod` utilizando o endereço IP, para isso, vamos utilizar o comando:
+    
+    ```yaml
+    wget -O- http://<endereço-ip-do-pod>
+    ```
+    
+    Precisamos mudar a página web de cada `Pod` para que possamos verificar se estamos acessando o `Pod` correto, para isso, vamos utilizar o comando:
+    
+    ```
+    echo "Pod 0" > /usr/share/nginx/html/index.html
+    ```
+    
+    Agora vamos acessar o `Pod` novamente, para isso, vamos utilizar o comando:
+    
+    ```
+    wget -O- http://<endereço-ip-do-pod>
+    ```
+    
+    A saída do comando deve ser:
+    
+    ```
+    Connecting to <endereço-ip-do-pod>:80 (<endereço-ip-do-pod>:80)
+    Pod 0
+    ```
+    
+    Caso queira, você pode fazer o mesmo para os outros `Pods`, basta mudar o número do `Pod` no comando `nslookup` e no comando `echo`.
+    
+    ### Excluindo um StatefulSet
+    
+    Para excluir um `StatefulSet` precisamos utilizar o comando:
+    
+    ```
+    kubectl delete statefulset nginx
+    
+    ```
+    
+    Ou ainda podemos excluir o `StatefulSet` utilizando o comando:
+    
+    ```
+    kubectl delete -f nginx-statefulset.yaml
+    
+    ```
+    
+    ### Excluindo um Headless Service
+    
+    Para excluir um `Headless Service` precisamos utilizar o comando:
+    
+    ```
+    kubectl delete service nginx
+    
+    ```
+    
+    Ou ainda podemos excluir o `Headless Service` utilizando o comando:
+    
+    ```
+    kubectl delete -f nginx-headless-service.yaml
+    
+    ```
+    
+    ### Excluindo um PVC
+    
+    Para excluir um `Volume` precisamos utilizar o comando:
+    
+    ```
+    kubectl delete pvc www-0
+    
+    ```
+    
+
+### Extra
+
+## Comandos:
+
+Entrar dentro de um Container dentro de um Pod:
+
+```yaml
+kubectl attach <nome_pod> -c <nome_container> -ti
+```
