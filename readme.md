@@ -1,4 +1,4 @@
-[Clique aqui para ir para o ns](- **Namespace**)
+[Clique aqui para ir para o ns](**Namespace**)
 
 # Kubernetes
 
