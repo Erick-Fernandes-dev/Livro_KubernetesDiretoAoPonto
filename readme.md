@@ -1,4 +1,4 @@
-- [Pod](#pod)
+- [Namespaces](#namespaces)
 
 # Kubernetes
 
