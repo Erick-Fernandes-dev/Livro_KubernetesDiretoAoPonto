@@ -20,7 +20,7 @@
 - [RBAC](#RBAC)
 - [Helm](#Helm)
 - [Ingress](#Ingress)
-- [Assuntos Extra](#assuntosextra)
+- [Assuntos Extra](##AssuntosExtra)
 - [HPA](#HPA)
 - [Statefulset](#Statefulset)
 - [Extra](#Extra)
@@ -4138,7 +4138,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%2058.png)
     
-  ## **Assuntos Extra**
+  ## Assuntos Extra
     
     ## **Comandos Extras**
     
