@@ -650,8 +650,8 @@
     kubectl logs -f httpd
     
     ```
-    
-- **Pods - 2**
+  
+    ## Pods-2
     
     ## **Primeiros passos - parte 1**
     
