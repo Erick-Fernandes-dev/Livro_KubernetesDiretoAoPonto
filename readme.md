@@ -10,7 +10,7 @@
 - [Pods](#Pods)
 - [Pods-2](#pods-2)
 - [Deployments](#Deployments)
-- [Deployments - 2](#Deployments - 2)
+- [Deployments-2](#Deployments-2)
 - [Services](#Services)
 - [Volumes](#Volumes)
 - [Cronjobs](#Cronjobs)
@@ -1485,7 +1485,7 @@
     
     ```
     
-  ## **Deployments - 2**
+  ## **Deployments-2**
     
     ### Introdução
     
