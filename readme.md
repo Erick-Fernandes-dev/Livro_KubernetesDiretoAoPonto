@@ -4,11 +4,26 @@
 
 ---
 
-# Sumário
+## Sumário Extra
 
 - [Namespaces](#namespaces)
 - [Pods](#Pods)
 - [Pods-2](#pods-2)
+- [Deployments](#Deployments)
+- [Deployments - 2](#Deployments-2)
+- [Services](#Services)
+- [Volumes](#Volumes)
+- [Cronjobs](#Cronjobs)
+- [Secrets](#Secrets)
+- [Configmaps](#Configmaps)
+- [InitContainer](#InitContainer)
+- [RBAC](#RBAC)
+- [Helm](#Helm)
+- [Ingress](#Ingress)
+- [Assuntos Extra](#AssuntosExtra)
+- [HPA](#HPA)
+- [Statefulset](#Statefulset)
+- [Extra](#Extra)
 
 ---
 
