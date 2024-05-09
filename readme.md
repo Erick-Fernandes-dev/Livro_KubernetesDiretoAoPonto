@@ -7,7 +7,7 @@
 # Sumário
 
 - [Namespaces](#namespaces)
-- [Pods](#pod)
+- [Pods](#Pods)
 - [Pods-2](#pods-2)
 
 ---
