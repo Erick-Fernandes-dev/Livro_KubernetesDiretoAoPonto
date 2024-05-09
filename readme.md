@@ -1485,7 +1485,7 @@
     
     ```
     
-- **Deployments - 2**
+  ## **Deployments - 2**
     
     ### Introdução
     
@@ -2045,7 +2045,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%207.png)
     
-- **Services**
+  ## **Services**
     
     ### Introdução
     
@@ -2581,7 +2581,7 @@
     
     Após aplicado, nenhum pod pode ser aplicando nesses nodes, ou seja, todo cuidado é necessário
     
-- **Volumes**
+  ## **Volumes**
     
     ### EmptyDir
     
@@ -3006,7 +3006,7 @@
             [https://chat.openai.com/share/b50493c0-2576-4d24-ad97-6d492fa5b811](https://chat.openai.com/share/b50493c0-2576-4d24-ad97-6d492fa5b811)
             
         
-- **Cronjobs**
+  ## **Cronjobs**
     
     
     CronJobs é um recurso do Kubernetes que permite executar tarefas programadas (jobs) em intervalos específicos. É semelhante à funcionalidade do cron no Unix/Linux, que executa scripts em horários programados.
@@ -3118,7 +3118,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%2024.png)
     
-- **Secrets**
+  ## **Secrets**
     
     
     Secrets no Kubernetes são um objeto que contém um pequeno volume de dados sensíveis, como uma senha, um token ou uma chave. Essas informações podem ser usadas por pods para realizar ações.
@@ -3248,7 +3248,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%2029.png)
     
-- **Configmaps**
+  ## **Configmaps**
     
     
     É um recurso que permite armazenar configurações não confidenciais em formato de pares chave-valor. Essas configurações podem ser utilizadas pelos pods durante a execução. O objetivo principal do ConfigMap é separar a configuração do código-fonte da aplicação, permitindo que você altere a configuração sem modificar o código da aplicação.
@@ -3450,7 +3450,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%2033.png)
     
-- **InitContainer**
+  ## **InitContainer**
     
     
     Executa uma tarefa antes do meu POD principal
@@ -3525,7 +3525,7 @@
         
         Então, para responder à sua pergunta, o contêiner `install` baixa o site usando `busybox` e `wget` porque `busybox` é uma imagem leve que inclui o utilitário `wget`, e o site baixado pode ser servido pelo contêiner `nginx` porque ambos os contêineres compartilham o volume `workdir`.
         
-- RBAC
+   ## RBAC
     
     
     RBAC (Role-Based Access Control) é um método de **controle de acesso** que é usado no Kubernetes para gerenciar permissões sobre quem pode fazer o quê dentro do cluster.
@@ -3751,7 +3751,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%2043.png)
     
-- **Helm**
+  ## **Helm**
     
     
     O Helm é uma ferramenta popular de código aberto para gerenciar aplicativos Kubernetes. Kubernetes é um sistema de orquestração de contêineres amplamente utilizado para automatizar a implantação, escalonamento e gerenciamento de contêineres em ambientes de produção.
@@ -3941,7 +3941,7 @@
     helm uninstall my-prometheus
     ```
     
-- **Ingress**
+  ## **Ingress**
     
     o `Ingress` é um recurso que gerencia o acesso externo aos serviços dentro de um cluster. Ele fornece um conjunto de regras para rotear o tráfego externo para os serviços internos com base em diferentes critérios, como o nome do host, caminho da URL e outros.
     
@@ -4138,7 +4138,7 @@
     
     ![Untitled](Kubernetes%20730e37146baa485d9f46957707434f50/Untitled%2058.png)
     
-- **Assuntos Extra**
+  ## **Assuntos Extra**
     
     ## **Comandos Extras**
     
@@ -4214,7 +4214,7 @@
     [https://github.com/Erick-Fernandes-dev/EstudosKubernetes](https://github.com/Erick-Fernandes-dev/EstudosKubernetes)
 
 
-### HPA
+## HPA
 
 ### Instalando o metrics server
 
@@ -4572,7 +4572,7 @@ watch -n1 kubectl get hpa
 
 Portanto, esse comando específico está sendo utilizado para monitorar e exibir as informações sobre os Autoscalers Horizontais no seu cluster Kubernetes. A saída será atualizada a cada segundo, permitindo que você observe alterações dinâmicas nos valores do HPA, como a contagem atual de réplicas, métricas de uso de recursos, entre outras informações relacionadas ao dimensionamento automático. Esse tipo de monitoramento em tempo real pode ser útil para entender como o escalonamento automático está respondendo às mudanças na carga de trabalho do cluster.
 
-### Statefulset
+## Statefulset
 
 O Statefulset é uma funcionalidade no kubernetes que gerencia o deployment e o scaling de um conjunto de Pods, fornecendo garantias sobre a ordem de deployment e a singularidade desses Pods.
 
@@ -4880,7 +4880,7 @@ persistência de dados ou identidade de rede estável.
     ```
     
 
-### Extra
+## Extra
 
 ## Comandos:
 
