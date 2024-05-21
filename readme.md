@@ -866,7 +866,6 @@
     ```bash
     
     # Serve para mostrar o histórico de um determinado deployment
-    
     kubectl rollout history deployment nginx-deployment
     
     kubectl rollout pause deployment nginx-deployment # Pausa o deployment
@@ -880,7 +879,10 @@
     kubectl rollout status deployment nginx-deployment # Mostra o status do deployment
     
     kubectl rollout undo deployment/httpd --to-revision=1 # Desfaz o deployment para uma determinada revisão
-    
+
+    # Adicionar uma anotação com uma mensagem personalizada
+    kubectl annotate deployment my-deployment kubernetes.io/change-cause="Alguma mensagem"
+
     ```
     
     ### maxSurge e maxUnavailable: Otimizando deployment
